@@ -30,8 +30,6 @@ public class PlayerGroundedState : PlayerState
     public override void TickUpdate(bool asServer)
     {
         base.TickUpdate(asServer);
-
-
     }
 
     public override void OnUpdate()

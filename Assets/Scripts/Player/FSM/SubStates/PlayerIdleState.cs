@@ -22,10 +22,10 @@ public class PlayerIdleState : PlayerGroundedState
     {
         base.PostTickUpdate();
 
-        if(_repData.moveDir != Vector2.zero)
+        if (_repData.moveDir != Vector2.zero)
             _stateMachine.ChangeState(_player.MoveState);
 
-        if(_repData.jump && _player._isGrounded && !_player._inMenu)
+        if (_repData.jump && _player._isGrounded && !_player._inMenu)
             _stateMachine.ChangeState(_player.JumpState);
     }
 

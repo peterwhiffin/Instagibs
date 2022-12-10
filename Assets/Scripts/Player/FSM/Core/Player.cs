@@ -10,6 +10,7 @@ using TMPro;
 using FishNet.Component.Animating;
 using FishNet.Broadcast;
 using FishNet.Object.Synchronizing.Internal;
+using UnityEngine.InputSystem;
 
 public class Player : NetworkBehaviour
 {
@@ -25,10 +26,8 @@ public class Player : NetworkBehaviour
         public bool shoot;
         public bool doJump;
         public bool respawn;
-        public bool doShoot;
         public bool dead;
         public Ray gcRay;
-        public Ray shootRay;
         public float lookSpeed;
     }
 
@@ -107,9 +106,7 @@ public class Player : NetworkBehaviour
     public float _camYRot;
 
     public bool _camReset;
-    public bool _inMenu;
-
-    public NetworkConnection _owner;
+    public bool _inMenu;    
 
     [SyncVar]
     public bool _isGrounded;
@@ -121,6 +118,12 @@ public class Player : NetworkBehaviour
     public double _shootTimer;
     [SyncVar]
     public int _jumpCounter;
+    [SyncVar]
+    public bool _isShooting;
+    [SyncVar]
+    public bool _startMatch;
+    [SyncVar]
+    public bool _matchStarted;
 
     private void Awake()
     {
@@ -154,6 +157,8 @@ public class Player : NetworkBehaviour
         _spawns = _spawnsParent.GetComponentsInChildren<Transform>();
         _isGrounded = true;
         _shootTimer = 2d;
+        _startMatch = false;
+        _matchStarted = true;
     }
 
     public override void OnStartClient()
@@ -172,6 +177,8 @@ public class Player : NetworkBehaviour
             InputHandler = GetComponent<InputHandler>();
             StateMachine.Initialize(IdleState);
 
+            InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.StartMatchBroadcast>(StartMatch);
+
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
@@ -183,8 +190,7 @@ public class Player : NetworkBehaviour
             _menuManager = _mainMenu.GetComponentInChildren<MainMenuManager>();
             _mainMenu.SetActive(false);
             _matchTimer.SetActive(true);
-            _owner = Owner;
-
+            
             PlayerInfo msg = new PlayerInfo()
             {
                 Username = _playerData.Username,
@@ -193,6 +199,14 @@ public class Player : NetworkBehaviour
 
             InstanceFinder.ClientManager.Broadcast(msg);
         }
+    }
+
+    public override void OnStopClient()
+    {
+        base.OnStopClient();
+
+        if (base.IsOwner)
+            InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.StartMatchBroadcast>(StartMatch);      
     }
 
     public void Update()
@@ -212,7 +226,7 @@ public class Player : NetworkBehaviour
         if (base.IsOwner)
             StateMachine.CurrentState.TickUpdate(false);
 
-        if (base.IsServer)
+        if (base.IsServer) 
             Replicate(default, true);        
     }
 
@@ -228,10 +242,16 @@ public class Player : NetworkBehaviour
             StateMachine.CurrentState.PostTickUpdate();
     }
 
+    [ServerRpc]
+    public void StartMatch(MatchManager.StartMatchBroadcast start)
+    {
+        _startMatch = start.StartMatch;
+        _matchStarted = start.MatchStarted;
+    }
+
     public void Replicate(RepData _data, bool _asServer, bool replaying = false) => ReplicateMethods(_data, _asServer, replaying);
 
     public void Reconcile(RecData _data, bool _asServer) => Reconciliation(_data, _asServer);
-
 
     [Replicate]
     private void ReplicateMethods(RepData _data, bool _asServer, bool replaying = false)
@@ -264,7 +284,6 @@ public class Player : NetworkBehaviour
     public void RotateCam(float mouseY)
     {
         float delta = (float)base.TimeManager.TickDelta;
-
         _camYRot = Mathf.Clamp(_camYRot - (mouseY * _playerData.lookSpeed * delta), -85f, 85f);
         _camObject.transform.localEulerAngles = new Vector3(Mathf.MoveTowardsAngle(_camObject.transform.eulerAngles.x, _camYRot, 360f), 0f, 0f);
     }
@@ -272,26 +291,20 @@ public class Player : NetworkBehaviour
 
     public void MovePlayer(RepData _data)
     {
-        float delta = (float)base.TimeManager.TickDelta;
-
+        float delta = (float)base.TimeManager.TickDelta;       
         Vector3 newVel = ((transform.forward * _data.moveDir.y) + (transform.right * _data.moveDir.x)) * delta * _playerData.moveSpeed;
         _rb.velocity = Vector3.Lerp(_rb.velocity, new Vector3(newVel.x, _rb.velocity.y, newVel.z), .1f);
-
         transform.Rotate(transform.up, _data.lookDir.x * delta * _data.lookSpeed);
     }
 
-    public void JumpPlayer()
-    {
-        _rb.AddForce(transform.up * _playerData.jumpHeight, ForceMode.Impulse);
-    }
+    public void JumpPlayer() => _rb.AddForce(transform.up * _playerData.jumpHeight, ForceMode.Impulse);
 
-    [ServerRpc]
-    public void Shoot(NetworkConnection conn, Ray ray)
-    {
-        _shootTimer = 0d;
-
+    [ServerRpc(RunLocally = false)]
+    public void Shoot(Ray ray, NetworkConnection conn = null)
+    {        
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
         {
+            _shootTimer = 0d;
             GameObject laser = Instantiate(_laser, ray.origin, Quaternion.identity);
             Spawn(laser, Owner);
             LaserGraphic(laser, ray.origin, hit.point);
@@ -338,9 +351,12 @@ public class Player : NetworkBehaviour
     }
 
     [ServerRpc]
-    public void ShootTimer()
+    public void ShootTimer(bool reset)
     {
         _shootTimer += TimeManager.TickDelta;
+
+        if(reset)
+            _shootTimer = 0d;
     }
 
     public void RespawnTimer(bool reset)

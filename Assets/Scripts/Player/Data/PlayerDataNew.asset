@@ -15,6 +15,6 @@ MonoBehaviour:
   moveSpeed: 1000
   jumpHeight: 600
   maxHealth: 100
-  lookSpeed: 5
+  lookSpeed: 13.71
   respawnTime: 5
-  Username: PeterPoop
+  Username: NotPeterWhiffin

@@ -8,10 +8,12 @@ public class PlayerShootState : PlayerAbilityState
     {
     }
 
+    private bool _hasFired;
+
     public override void Enter()
     {
         base.Enter();
-
+        _hasFired = false;
     }
 
     public override void Exit()
@@ -23,21 +25,24 @@ public class PlayerShootState : PlayerAbilityState
     {
         base.PostTickUpdate();
 
-        _stateMachine.ChangeState(_player.IdleState);
+        if(_player._shootTimer < .8d)
+            _stateMachine.ChangeState(_player.IdleState);
     }
 
     public override void TickUpdate(bool asServer)
-    {
+    {        
         base.TickUpdate(asServer);
 
-        //if (!asServer)
-        //{
-        //    _repData.moveDir = _moveInput;
-        //    _repData.doShoot = true;
-        //    _repData.shootRay = _player._cam.ScreenPointToRay(_player._crosshair.transform.position);
-        //    _player.Replicate(_repData, false);
-        //}
+        if (!_hasFired)
+        {
+            _player.Shoot(_player._cam.ScreenPointToRay(_player._crosshair.transform.position));
+            _hasFired = true;
+        }
 
-        _player.Shoot(_player.Owner, _player._cam.ScreenPointToRay(_player._crosshair.transform.position));
+        if (!asServer)
+        {
+            _repData.moveDir = _moveInput;
+            _player.Replicate(_repData, false);
+        }
     }
 }

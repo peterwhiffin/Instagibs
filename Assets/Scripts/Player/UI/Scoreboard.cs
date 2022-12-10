@@ -26,8 +26,6 @@ public class Scoreboard : NetworkBehaviour
         InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.ScoreBroadcast>(UpdatePlayerScore);
         InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.NewPlayerBroadCast>(NewPlayer);
         InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.RemovePlayerBroadcast>(RemovePlayer);
-
-
     }
 
     public void NewPlayer(MatchManager.NewPlayerBroadCast info)
@@ -41,11 +39,12 @@ public class Scoreboard : NetworkBehaviour
                 bar._scoreText.text = player.Value.Score.ToString();
                 bar._currentSlot = player.Value.Slot;
                 bar._score = player.Value.Score;
+                bar._isActive = true;
                 
                 if (player.Value.ID == Owner.ClientId)
                 {
                     ColorUtility.TryParseHtmlString("FF9494", out Color highlight);
-                    highlight.a = .2f;
+                    highlight.a = .02f;
                     bar._barImage.color = highlight;                  
                 }
             }
@@ -57,17 +56,34 @@ public class Scoreboard : NetworkBehaviour
             bar._scoreText.text = "0";
             bar._score = 0;
             bar._currentSlot = info.Slot;
+            bar._isActive = true;
         }
     }
 
     public void UpdatePlayerScore(MatchManager.ScoreBroadcast info)
     {
-        var barInfo = _playerBars[info.Slot].GetComponent<PlayerBar>();
-        
-        barInfo._scoreText.text = info.Score.ToString();
-        barInfo._score = info.Score;
+        if (info.Reset)
+        {
+            foreach (GameObject playerBar in _playerBars)
+            {
+                var bar = playerBar.GetComponent<PlayerBar>();
+                
+                if (bar._isActive)
+                {
+                    bar._scoreText.text = "0";
+                    bar._score = 0;
+                }
+            }
+        }
+        else
+        {
+            var barInfo = _playerBars[info.Slot].GetComponent<PlayerBar>();
 
-        MoveSlots(barInfo);
+            barInfo._scoreText.text = info.Score.ToString();
+            barInfo._score = info.Score;
+
+            MoveSlots(barInfo);
+        }
     }
 
     public void MoveSlots(PlayerBar barInfo)
@@ -91,7 +107,8 @@ public class Scoreboard : NetworkBehaviour
         bar._nameText.text = "";
         bar._scoreText.text = "";
         bar._pingText.text = "";
-        
+        bar._isActive = false;
+
         for(int i = bar._currentSlot; i < _playerSlots.Count; i++)
         {
             var nextBar = _playerSlots[i].GetComponentInChildren<PlayerBar>();

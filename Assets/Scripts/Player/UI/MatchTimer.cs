@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using FishNet.Object;
 using TMPro;
+using FishNet;
 
 public class MatchTimer : NetworkBehaviour
 {
-    public bool _matchStarted;
-    private double _matchTime;
     public TMP_Text _timerText;
 
     public override void OnStartClient()
@@ -16,26 +15,18 @@ public class MatchTimer : NetworkBehaviour
 
         if (base.IsOwner)
         {
-            _matchStarted = true;
-            _matchTime = 300;
+            InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.TimeBroadcast>(UpdateTime);
         }
     }
 
-    void Update()
+    public override void OnStopClient()
     {
-        if (_matchStarted)
-            RunMatchTimer();
-
+        base.OnStopClient();
+        InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.TimeBroadcast>(UpdateTime);
     }
 
-    public void RunMatchTimer()
+    public void UpdateTime(MatchManager.TimeBroadcast time)
     {
-        _matchTime -= base.TimeManager.TickDelta;
-        float floatedTime = ((float)_matchTime);
-        
-        var minutes = Mathf.FloorToInt(floatedTime / 60);
-        var seconds = Mathf.FloorToInt(floatedTime % 60);
-
-        _timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+        _timerText.text = time.Time;
     }
 }

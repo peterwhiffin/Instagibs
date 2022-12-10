@@ -14,6 +14,7 @@ public class PlayerBar : MonoBehaviour
 
     public int _currentSlot;
     public int _score;
+    public bool _isActive;
 
     public ScoreboardSlot slotObject;
 

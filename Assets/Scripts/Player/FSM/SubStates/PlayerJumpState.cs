@@ -20,13 +20,11 @@ public class PlayerJumpState : PlayerAbilityState
         _player._networkAnim.Play("Jump", 0, 0f);
         _jumpPlaying = true;
         _player.JumpCounter(false);
-        Debug.Log(_player._jumpCounter);
     }
 
     public override void Exit()
     {
         base.Exit();
-
     }
 
     public override void PostTickUpdate()

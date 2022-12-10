@@ -7,14 +7,11 @@ public class PlayerInAirState : PlayerState
     public PlayerInAirState(Player _player, PlayerStateMachine _stateMachine, PlayerData _playerData, string _animBoolName, Player.RepData _repData) : base(_player, _stateMachine, _playerData, _animBoolName, _repData)
     {
     }
-
-    
-
+   
     public override void Enter()
     {
         base.Enter();
-        _player._anim.SetFloat("Blend", Mathf.Lerp(_player._anim.GetFloat("Blend"), 0f, .1f));
-        
+        _player._anim.SetFloat("Blend", Mathf.Lerp(_player._anim.GetFloat("Blend"), 0f, .1f));        
     }
 
     public override void Exit()
@@ -30,7 +27,7 @@ public class PlayerInAirState : PlayerState
             _stateMachine.ChangeState(_player.IdleState);
 
         if (_player._jumpCounter < 1 && _repData.jump)
-        {         
+        {
             _stateMachine.ChangeState(_player.JumpState);
         }
     }

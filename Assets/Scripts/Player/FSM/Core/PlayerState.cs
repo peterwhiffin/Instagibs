@@ -39,28 +39,30 @@ public class PlayerState
         _player.RotateCam(_lookInput.y);
     }
     public virtual void TickUpdate(bool asServer) 
-    {
+    {        
         if (!asServer)
         {
+            _player.ShootTimer(false);
+            
             _player.Reconcile(default, false);
-            _repData = default; 
-            //_repData.shootTimer = _player.ShootTimer(false);
+            _repData = default;
+            _repData.gcRay = new Ray(_player._groundCheckPos.position, -_player.transform.up);
             _repData.lookDir = _lookInput;
             _repData.lookSpeed = _playerData.lookSpeed;
-            _repData.gcRay = new Ray(_player._groundCheckPos.position, -_player.transform.up);
-            _repData.shoot = _player.InputHandler.ShootQueued;
+            _repData.shoot = _shootQueued;
             _player.InputHandler.ShootQueued = false;
-        }
+        }  
     }
     public virtual void PostTickUpdate()
     {
-        if(_player._playerDead && _stateMachine.CurrentState != _player.DeathState)
+        if (_stateMachine.CurrentState == _player.ShootState)
+            _player.ShootTimer(true);
+
+        if (_player._playerDead && _stateMachine.CurrentState != _player.DeathState)
             _stateMachine.ChangeState(_player.DeathState);
 
-        if (_repData.shoot && !_player._inMenu && _player._shootTimer > .8f)
+        if (_repData.shoot && !_player._inMenu && _player._shootTimer > .8d && _player._matchStarted && _stateMachine.CurrentState != _player.ShootState)
             _stateMachine.ChangeState(_player.ShootState);
-
-        _player.ShootTimer();
     }
     
     public virtual void ServerRPCMethods() { }
@@ -77,9 +79,9 @@ public class PlayerState
         {
             AnimatorStateInfo info = _player._anim.GetCurrentAnimatorStateInfo(0);
 
-            if (info.normalizedTime == .9f)
+            if (info.normalizedTime > .9f)
             {
-                _player._anim.Play("Idle");
+                _player._anim.Play("Idle", 0, 0);
             }
         }       
     }

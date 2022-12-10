@@ -29,8 +29,6 @@ public class PlayerDeathState : PlayerState
     public override void Exit()
     {
         base.Exit();
-
-        //_player._camObject.transform.parent = _player._camParent;
         _player._camObject.transform.localPosition = _player._cameDefaultPos;
         _player._camObject.transform.localEulerAngles = Vector3.zero;
     }
