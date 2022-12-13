@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class MatchManager : NetworkBehaviour
 {
-    public struct PlayerInfo
+    public struct PlayerInfo : IBroadcast
     {
         public string Username;
         public int Score;
@@ -19,7 +19,7 @@ public class MatchManager : NetworkBehaviour
     public struct ScoreBroadcast : IBroadcast
     {
         public int Score;
-        public int Slot;
+        public int ID;
         public bool Reset;
     }
 
@@ -28,13 +28,12 @@ public class MatchManager : NetworkBehaviour
         public string Username;
         public int Slot;
         public int ID;
-        public NetworkConnection Conn;
         public Dictionary<int, PlayerInfo> CurrentPlayers;
     }
 
     public struct RemovePlayerBroadcast : IBroadcast
     {
-        public int Slot;
+        public int ID;
     }
 
     public struct PlayersReadyBroadcast : IBroadcast
@@ -47,6 +46,7 @@ public class MatchManager : NetworkBehaviour
     {
         public bool StartMatch;
         public bool MatchStarted;
+        public bool MatchFinished;
     }
 
     public struct EndMatchBroadcast : IBroadcast
@@ -58,6 +58,17 @@ public class MatchManager : NetworkBehaviour
     public struct TimeBroadcast : IBroadcast
     {
         public string Time;
+    }
+
+    public struct CheckMatchStatus : IBroadcast
+    {
+        public bool StartMatch;
+        public bool MatchStarted;
+    }
+
+    public struct DespawnBroadcast : IBroadcast
+    {
+
     }
 
     public int _highestScore;
@@ -82,15 +93,15 @@ public class MatchManager : NetworkBehaviour
         base.OnStartServer();
         InstanceFinder.ServerManager.RegisterBroadcast<Player.PlayerInfo>(NewPlayer);
         InstanceFinder.ServerManager.RegisterBroadcast<Player.ScoreBroadcast>(UpdateScore);
-        InstanceFinder.ServerManager.RegisterBroadcast<Player.DisconnectBroadcast>(PlayerDisconnect);
-        InstanceFinder.ServerManager.RegisterBroadcast<ReadyUpUI.ReadyBroadcast>(PlayerReady);
+        //InstanceFinder.ServerManager.RegisterBroadcast<ReadyUpUI.ReadyBroadcast>(PlayerReady);
+        InstanceFinder.ServerManager.OnRemoteConnectionState += ConnectionChanged;
 
         PlayerInfos = new Dictionary<int, PlayerInfo>();
-        PlayersReady = new Dictionary<int, bool>();
-        _matchStarted = false;
-        _matchTime = 10;
-        _matchFinished = false;
-        _seconds = 10;
+        //PlayersReady = new Dictionary<int, bool>();
+        //_matchStarted = false;
+        //_matchTime = 10;
+        //_matchFinished = false;
+        //_seconds = 10;
     }
 
     public override void OnStopServer()
@@ -98,241 +109,308 @@ public class MatchManager : NetworkBehaviour
         base.OnStopServer();
         InstanceFinder.ServerManager.UnregisterBroadcast<Player.PlayerInfo>(NewPlayer);
         InstanceFinder.ServerManager.UnregisterBroadcast<Player.ScoreBroadcast>(UpdateScore);
-        InstanceFinder.ServerManager.UnregisterBroadcast<Player.DisconnectBroadcast>(PlayerDisconnect);
-        InstanceFinder.ServerManager.UnregisterBroadcast<ReadyUpUI.ReadyBroadcast>(PlayerReady);
+        //InstanceFinder.ServerManager.UnregisterBroadcast<ReadyUpUI.ReadyBroadcast>(PlayerReady);
+        InstanceFinder.ServerManager.OnRemoteConnectionState -= ConnectionChanged;
     }
 
-    private void Update()
+    public void NewPlayer(NetworkConnection conn, Player.PlayerInfo _playerInfo)
     {
-        if (IsServer)
+        var newPlayer = new PlayerInfo();
+        var newPlayerB = new NewPlayerBroadCast();
+        newPlayer.ID = newPlayerB.ID = conn.ClientId;
+        newPlayer.Username = newPlayerB.Username = _playerInfo.Username;
+        newPlayer.Score = 0;
+        PlayerInfos.Add(newPlayer.ID, newPlayer);
+        newPlayerB.CurrentPlayers = PlayerInfos;
+
+        InstanceFinder.ServerManager.Broadcast(newPlayerB);
+    }
+
+    public void UpdateScore(NetworkConnection conn, Player.ScoreBroadcast score)
+    {
+        var newInfo = new PlayerInfo();
+        newInfo = PlayerInfos[score.ID];
+        newInfo.Score++;
+        PlayerInfos[score.ID] = newInfo;
+
+        var newScore = new ScoreBroadcast()
         {
-            if (_startMatch)
-            {
-                foreach(KeyValuePair<int, bool> player in PlayersReady)
-                {
-                    PlayerInfo info = PlayerInfos[player.Key];
-                    info.Score = 0;
-                    PlayerInfos[player.Key] = info;
-                }
+            Score = newInfo.Score,
+            ID = score.ID
+        };
 
-                var newB = new ScoreBroadcast()
-                {
-                    Reset = true
-                };
+        InstanceFinder.ServerManager.Broadcast(newScore);
+    }
 
-                var end = new EndMatchBroadcast()
-                {
-                    MatchEnded = false
-                };
 
-                InstanceFinder.ServerManager.Broadcast(end);
-                InstanceFinder.ServerManager.Broadcast(newB);
+    //private void Update()
+    //{
+    //    if (IsServer)
+    //    {
+    //        if (_startMatch)
+    //        {
+    //            foreach (KeyValuePair<int, bool> player in PlayersReady)
+    //            {
+    //                PlayerInfo info = PlayerInfos[player.Key];
+    //                info.Score = 0;
+    //                PlayerInfos[player.Key] = info;
+    //            }
 
-                float floatedTime = ((float)_matchTime);
+    //            var newB = new ScoreBroadcast()
+    //            {
+    //                Reset = true
+    //            };
 
-                var seconds = Mathf.FloorToInt(floatedTime % 60);
+    //            var end = new EndMatchBroadcast()
+    //            {
+    //                MatchEnded = false
+    //            };
 
-                if (_seconds != seconds)
-                {
-                    var time = new TimeBroadcast()
-                    {
-                        Time = seconds.ToString()
-                    };
+    //            InstanceFinder.ServerManager.Broadcast(end);
+    //            InstanceFinder.ServerManager.Broadcast(newB);
 
-                    InstanceFinder.ServerManager.Broadcast(time);
-                    _seconds = seconds;
-                }
+    //            float floatedTime = ((float)_matchTime);
 
-                _matchTime -= base.TimeManager.TickDelta;
+    //            var seconds = Mathf.FloorToInt(floatedTime % 60);
 
-                if (seconds == 0)
-                {
-                    var start = new StartMatchBroadcast()
-                    {
-                        StartMatch = false,
-                        MatchStarted = true
-                    };
+    //            if (_seconds != seconds)
+    //            {
+    //                var time = new TimeBroadcast()
+    //                {
+    //                    Time = seconds.ToString()
+    //                };
 
-                    InstanceFinder.ServerManager.Broadcast(start);
-                    _matchFinished = false;
-                    _matchStarted = true;
-                    _startMatch = false;
-                    _matchTime = 150;
-                    _seconds = 10;
-                }
-            }
+    //                InstanceFinder.ServerManager.Broadcast(time);
+    //                _seconds = seconds;
+    //            }
 
-            if (_matchStarted)
-            {
-                _startMatch = false;
-                float floatedTime = ((float)_matchTime);
+    //            _matchTime -= base.TimeManager.TickDelta;
 
-                var minutes = Mathf.FloorToInt(floatedTime / 60);
-                var seconds = Mathf.FloorToInt(floatedTime % 60);
+    //            if (seconds == 0)
+    //            {
+    //                var start = new StartMatchBroadcast()
+    //                {
+    //                    StartMatch = false,
+    //                    MatchStarted = true,
+    //                    MatchFinished = false
+    //                };
 
-                if (_seconds != seconds || _minutes != minutes)
-                {
-                    var time = new TimeBroadcast()
-                    {
-                        Time = string.Format("{0:0}:{1:00}", minutes, seconds)
-                    };
+    //                InstanceFinder.ServerManager.Broadcast(start);
+    //                _matchFinished = false;
+    //                _matchStarted = true;
+    //                _startMatch = false;
+    //                _matchTime = 150;
+    //                _seconds = 10;
+    //            }
+    //        }
 
-                    InstanceFinder.ServerManager.Broadcast(time);
-                    _seconds = seconds;
-                    _minutes = minutes;
-                }
+    //        if (_matchStarted)
+    //        {
+    //            _startMatch = false;
+    //            float floatedTime = ((float)_matchTime);
 
-                if (minutes == 0 && seconds == 0)
-                {
-                    _matchFinished = true;
-                }
+    //            var minutes = Mathf.FloorToInt(floatedTime / 60);
+    //            var seconds = Mathf.FloorToInt(floatedTime % 60);
 
-                _matchTime -= base.TimeManager.TickDelta;
-            }
+    //            if (_seconds != seconds || _minutes != minutes)
+    //            {
+    //                var time = new TimeBroadcast()
+    //                {
+    //                    Time = string.Format("{0:0}:{1:00}", minutes, seconds)
+    //                };
 
-            if (_matchFinished && _matchStarted)
-            {
-                _matchFinished = false;
-                _matchStarted = false;
-                _matchTime = 10;
+    //                InstanceFinder.ServerManager.Broadcast(time);
+    //                _seconds = seconds;
+    //                _minutes = minutes;
+    //            }
 
-                _highestScore = 0;
-                foreach(KeyValuePair<int, PlayerInfo> player in PlayerInfos)
-                {
-                    PlayersReady[player.Key] = false;
+    //            if (minutes == 0 && seconds == 0)
+    //            {
+    //                _matchFinished = true;
+    //            }
 
-                    if (player.Value.Score > _highestScore)
-                    {
-                        _highestScore = player.Value.Score;
-                        _winner = player.Value.Username;
-                    }                   
-                }
+    //            _matchTime -= base.TimeManager.TickDelta;
+    //        }
 
-                var end = new EndMatchBroadcast()
-                {
-                    MatchEnded = true,
-                    Winner = _winner,
-                };
+    //        if (_matchFinished && _matchStarted)
+    //        {
+    //            _matchFinished = false;
+    //            _matchStarted = false;
+    //            _matchTime = 10;
 
-                var ready = new PlayersReadyBroadcast()
-                {
-                    PlayersReady = 0,
-                    TotalPlayers = PlayersReady.Count
-                };
+    //            _highestScore = 0;
+    //            foreach(KeyValuePair<int, PlayerInfo> player in PlayerInfos)
+    //            {
+    //                PlayersReady[player.Key] = false;
 
-                InstanceFinder.ServerManager.Broadcast(end);
-                InstanceFinder.ServerManager.Broadcast(ready);
-            }
+    //                if (player.Value.Score > _highestScore)
+    //                {
+    //                    _highestScore = player.Value.Score;
+    //                    _winner = player.Value.Username;
+    //                }                   
+    //            }
+
+    //            var end = new EndMatchBroadcast()
+    //            {
+    //                MatchEnded = true,
+    //                Winner = _winner,
+    //            };
+
+    //            var ready = new PlayersReadyBroadcast()
+    //            {
+    //                PlayersReady = 0,
+    //                TotalPlayers = PlayersReady.Count
+    //            };
+
+    //            InstanceFinder.ServerManager.Broadcast(end);
+    //            InstanceFinder.ServerManager.Broadcast(ready);
+    //        }
+    //    }
+    //}
+
+    //public void NewPlayer(NetworkConnection conn, Player.PlayerInfo info)
+    //{
+    //    var newInfo = new PlayerInfo();
+    //    var broadcastInfo = new NewPlayerBroadCast();
+    //    newInfo.Username = broadcastInfo.Username = info.Username;
+    //    newInfo.Score = 0;
+    //    newInfo.Slot = broadcastInfo.Slot = PlayerInfos.Count;
+    //    newInfo.ID = broadcastInfo.ID = conn.ClientId;
+    //    broadcastInfo.Conn = conn;
+    //    broadcastInfo.CurrentPlayers = PlayerInfos;
+    //    PlayerInfos.Add(conn.ClientId, newInfo);
+    //    PlayersReady.Add(conn.ClientId, false);
+
+    //    InstanceFinder.ServerManager.Broadcast(broadcastInfo);
+
+    //    var matchStatus = new CheckMatchStatus()
+    //    {
+    //        MatchStarted = _matchStarted,
+    //        StartMatch = _startMatch
+    //    };
+
+    //    InstanceFinder.ServerManager.Broadcast(matchStatus);
+    //}
+
+    //public void UpdateScore(NetworkConnection conn, Player.ScoreBroadcast SB)
+    //{
+    //    PlayerInfo info = PlayerInfos[SB.ID];
+    //    info.Score++;
+    //    PlayerInfos[SB.ID] = info;
+
+    //    var newB = new ScoreBroadcast()
+    //    {
+    //        Score = info.Score,
+    //        Slot = info.Slot,
+    //        Reset = false
+    //    };
+
+    //    InstanceFinder.ServerManager.Broadcast(newB);
+
+    //    if (info.Score == 10)
+    //        _matchFinished = true;
+    //}
+
+    //public void PlayerDisconnect(NetworkConnection conn, Player.DisconnectBroadcast info)
+    //{
+    //    var player = new RemovePlayerBroadcast()
+    //    {
+    //        Slot = PlayerInfos[info.ID].ID
+    //    };
+
+    //    InstanceFinder.ServerManager.Broadcast(player);
+
+    //    PlayerInfos.Remove(info.ID);
+    //    PlayersReady.Remove(info.ID);
+
+    //    //foreach(KeyValuePair<int, PlayerInfo> pInfos in PlayerInfos)
+    //    //{
+    //    //    PlayerInfo newInfo = PlayerInfos[pInfos.Value.ID];
+    //    //    newInfo.Slot--;
+    //    //    PlayerInfos[pInfos.Value.ID] = newInfo;
+    //    //}
+
+    //    if (!_startMatch && !_matchStarted)
+    //    {
+    //        _playersReady = 0;
+
+    //        foreach (KeyValuePair<int, bool> playerReady in PlayersReady)
+    //        {
+    //            if (playerReady.Value)
+    //                _playersReady++;
+    //        }
+
+    //        var playersReady = new PlayersReadyBroadcast()
+    //        {
+    //            PlayersReady = _playersReady,
+    //            TotalPlayers = PlayersReady.Count
+    //        };
+
+    //        InstanceFinder.ServerManager.Broadcast(playersReady);
+    //    }
+    //}
+
+    //public void PlayerReady(NetworkConnection conn, ReadyUpUI.ReadyBroadcast ready)
+    //{
+    //    if (!_startMatch && !_matchStarted)
+    //    {
+    //        PlayersReady[conn.ClientId] = ready.IsReady;
+
+    //        _playersReady = 0;
+
+    //        foreach (KeyValuePair<int, bool> player in PlayersReady)
+    //        {
+    //            if (player.Value)
+    //                _playersReady++;
+    //        }
+
+    //        var playersReady = new PlayersReadyBroadcast()
+    //        {
+    //            PlayersReady = _playersReady,
+    //            TotalPlayers = PlayersReady.Count
+    //        };
+
+    //        InstanceFinder.ServerManager.Broadcast(playersReady);
+
+    //        if (_playersReady == PlayersReady.Count)
+    //        {
+    //            var start = new StartMatchBroadcast()
+    //            {
+    //                StartMatch = true,
+    //                MatchStarted = false,
+    //                MatchFinished = false
+    //            };
+
+    //            _startMatch = true;
+
+    //            InstanceFinder.ServerManager.Broadcast(start);
+    //        }
+    //    }
+    //}
+
+    public void ConnectionChanged(NetworkConnection conn, RemoteConnectionStateArgs args)
+    {
+        if(args.ConnectionState == RemoteConnectionState.Stopped)
+        {
+            Debug.Log("RUNNING CONN CHANGED");
+            PlayerDisconnect(conn);
+            
         }
     }
 
-    public void NewPlayer(NetworkConnection conn, Player.PlayerInfo info)
+    public void PlayerDisconnect(NetworkConnection conn)
     {
-        var newInfo = new PlayerInfo();
-        var broadcastInfo = new NewPlayerBroadCast();
-        newInfo.Username = broadcastInfo.Username = info.Username;
-        newInfo.Score = 0;
-        newInfo.Slot = broadcastInfo.Slot = PlayerInfos.Count;
-        newInfo.ID = broadcastInfo.ID = conn.ClientId;
-        broadcastInfo.Conn = conn;
-        broadcastInfo.CurrentPlayers = PlayerInfos;
-        PlayerInfos.Add(conn.ClientId, newInfo);
-        PlayersReady.Add(conn.ClientId, false);
+        Debug.Log("Player ID disconnected: " + conn.ClientId);
 
-        InstanceFinder.ServerManager.Broadcast(broadcastInfo);        
-    }
+        PlayerInfos.Remove(conn.ClientId);
 
-    public void UpdateScore(NetworkConnection conn, Player.ScoreBroadcast SB)
-    {
-        PlayerInfo info = PlayerInfos[SB.ID];
-        info.Score++;
-        PlayerInfos[SB.ID] = info;
+        InstanceFinder.ServerManager.Despawn(conn.FirstObject);
 
-        var newB = new ScoreBroadcast()
-        {
-            Score = info.Score,
-            Slot = info.Slot,
-            Reset = false
-        };
-
-        InstanceFinder.ServerManager.Broadcast(newB);
-
-        if(info.Score == 10)
-            _matchFinished = true;
-    }
-
-    public void PlayerDisconnect(NetworkConnection conn, Player.DisconnectBroadcast info)
-    {
         var player = new RemovePlayerBroadcast()
         {
-            Slot = PlayerInfos[info.ID].Slot
+            ID = conn.ClientId
         };
 
         InstanceFinder.ServerManager.Broadcast(player);
-
-        PlayerInfos.Remove(info.ID);
-        PlayersReady.Remove(info.ID);
-
-
-        if (!_startMatch)
-        {
-            _playersReady = 0;
-
-            foreach (KeyValuePair<int, bool> playerReady in PlayersReady)
-            {
-                if (playerReady.Value)
-                    _playersReady++;
-            }
-
-            var playersReady = new PlayersReadyBroadcast()
-            {
-                PlayersReady = _playersReady,
-                TotalPlayers = PlayersReady.Count
-            };
-
-            InstanceFinder.ServerManager.Broadcast(playersReady);
-        }
-    }
-
-    public void PlayerReady(NetworkConnection conn, ReadyUpUI.ReadyBroadcast ready)
-    {
-        if (!_startMatch)
-        {
-            PlayersReady[conn.ClientId] = ready.IsReady;
-
-            _playersReady = 0;
-
-            foreach (KeyValuePair<int, bool> player in PlayersReady)
-            {
-                if (player.Value)
-                    _playersReady++;
-            }
-
-            var playersReady = new PlayersReadyBroadcast()
-            {
-                PlayersReady = _playersReady,
-                TotalPlayers = PlayersReady.Count
-            };
-
-            InstanceFinder.ServerManager.Broadcast(playersReady);
-
-            if (_playersReady == PlayersReady.Count)
-            {
-                var start = new StartMatchBroadcast()
-                {
-                    StartMatch = true,
-                    MatchStarted = false
-                };
-
-                _startMatch = true;
-
-                InstanceFinder.ServerManager.Broadcast(start);
-
-                var score = new ScoreBroadcast()
-                {
-                    Reset = true
-                };
-            }
-        }
     }
 }

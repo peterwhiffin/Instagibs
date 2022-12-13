@@ -6,4 +6,7 @@ public class ScoreboardSlot : MonoBehaviour
 {
     public int slot;
     public PlayerBar _playerBar;
+    public bool _hasBar;
+
+    
 }

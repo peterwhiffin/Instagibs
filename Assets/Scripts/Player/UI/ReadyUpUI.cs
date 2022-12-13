@@ -17,6 +17,7 @@ public class ReadyUpUI : NetworkBehaviour
 
 
     public bool _isReady;
+    
     public TMP_Text _playersReadyText;
     public TMP_Text _selfReadyText;
     public TMP_Text _winnerText;
@@ -56,8 +57,7 @@ public class ReadyUpUI : NetworkBehaviour
 
     public override void OnStopClient()
     {
-        base.OnStopClient();
-        
+        base.OnStopClient();      
     }
 
     public void MatchStart(MatchManager.StartMatchBroadcast info)
@@ -84,27 +84,31 @@ public class ReadyUpUI : NetworkBehaviour
 
     public void ReadyUp()
     {
-        _isReady = !_isReady;
 
-        if (_isReady)
+        if (_readyVisual.activeInHierarchy)
         {
-            _selfReadyText.text = "Ready";
-            _readyImage.color = Color.green;
+            _isReady = !_isReady;
+
+            if (_isReady)
+            {
+                _selfReadyText.text = "Ready";
+                _readyImage.color = Color.green;
+            }
+            else
+            {
+                _selfReadyText.text = "Not Ready";
+                _readyImage.color = Color.red;
+            }
+
+
+            var ready = new ReadyBroadcast()
+            {
+                IsReady = _isReady,
+                IsDisc = false
+            };
+
+            InstanceFinder.ClientManager.Broadcast(ready);
         }
-        else
-        {
-            _selfReadyText.text = "Not Ready";
-            _readyImage.color = Color.red;
-        }
-
-
-        var ready = new ReadyBroadcast()
-        {
-            IsReady = _isReady,
-            IsDisc = false
-        };
-
-        InstanceFinder.ClientManager.Broadcast(ready);
     }
 
     public void UpdateReady(MatchManager.PlayersReadyBroadcast info)

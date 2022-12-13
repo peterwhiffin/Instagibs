@@ -42,6 +42,7 @@ public class PlayerState
     {        
         if (!asServer)
         {
+            _shootQueued = _player.InputHandler.ShootQueued;
             _player.ShootTimer(false);
             
             _player.Reconcile(default, false);
@@ -61,7 +62,7 @@ public class PlayerState
         if (_player._playerDead && _stateMachine.CurrentState != _player.DeathState)
             _stateMachine.ChangeState(_player.DeathState);
 
-        if (_repData.shoot && !_player._inMenu && _player._shootTimer > .8d && _player._matchStarted && _stateMachine.CurrentState != _player.ShootState)
+        if (_repData.shoot && !_player._inMenu && _player._shootTimer > .8d && !_player._startMatch && _stateMachine.CurrentState != _player.ShootState)
             _stateMachine.ChangeState(_player.ShootState);
     }
     
@@ -73,7 +74,7 @@ public class PlayerState
         _moveInput = _player.InputHandler.MoveInput;
         _lookInput = _player.InputHandler.LookInput;
         _jumpQueued = _player.InputHandler.JumpQueued;
-        _shootQueued = _player.InputHandler.ShootQueued;
+        
 
         if (_jumpPlaying)
         {

@@ -102,6 +102,7 @@ public class Player : NetworkBehaviour
     public LayerMask _groundMask;
     public RepData _repData;
     public Vector3 _cameDefaultPos;
+    public Scoreboard _scoreboard;
 
     public float _camYRot;
 
@@ -120,10 +121,12 @@ public class Player : NetworkBehaviour
     public int _jumpCounter;
     [SyncVar]
     public bool _isShooting;
-    [SyncVar]
-    public bool _startMatch;
-    [SyncVar]
+    
+    public bool _startMatch;    
     public bool _matchStarted;
+    
+    [SyncVar]
+    private int _ownerID;
 
     private void Awake()
     {
@@ -141,13 +144,6 @@ public class Player : NetworkBehaviour
             InstanceFinder.TimeManager.OnTick -= TimeManager_OnTick;
             InstanceFinder.TimeManager.OnPostTick -= TimeManager_OnPostTick;
         }
-        
-        var DC = new DisconnectBroadcast()
-        {
-            ID = Owner.ClientId
-        };
-
-        InstanceFinder.ClientManager.Broadcast(DC);
     }
 
     public override void OnStartServer()
@@ -159,6 +155,7 @@ public class Player : NetworkBehaviour
         _shootTimer = 2d;
         _startMatch = false;
         _matchStarted = true;
+        _ownerID = Owner.ClientId;
     }
 
     public override void OnStartClient()
@@ -178,12 +175,13 @@ public class Player : NetworkBehaviour
             StateMachine.Initialize(IdleState);
 
             InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.StartMatchBroadcast>(StartMatch);
+            InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.CheckMatchStatus>(MatchStatus);
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
             _camObject.SetActive(true);
-            _readyUpUI.SetActive(true);
+            //_readyUpUI.SetActive(true);
             _spawnsParent = GameObject.FindWithTag("Spawns");
             _spawns = _spawnsParent.GetComponentsInChildren<Transform>();
             _mainMenu = Instantiate(_mainMenu, new Vector3(0, -400f, 0), Quaternion.identity);
@@ -191,22 +189,41 @@ public class Player : NetworkBehaviour
             _mainMenu.SetActive(false);
             _matchTimer.SetActive(true);
             
+            
             PlayerInfo msg = new PlayerInfo()
             {
                 Username = _playerData.Username,
                 Score = 0
             };
 
+           
+
             InstanceFinder.ClientManager.Broadcast(msg);
         }
     }
+
+    public void MatchStatus(MatchManager.CheckMatchStatus status)
+    {
+        _startMatch = status.StartMatch;
+        _matchStarted = status.MatchStarted;
+
+        if (!_matchStarted && !_startMatch)
+            _readyUpUI.SetActive(true);
+    }
+
+
 
     public override void OnStopClient()
     {
         base.OnStopClient();
 
         if (base.IsOwner)
-            InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.StartMatchBroadcast>(StartMatch);      
+        {
+            InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.StartMatchBroadcast>(StartMatch);
+            InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.CheckMatchStatus>(MatchStatus);
+
+            
+        }
     }
 
     public void Update()
@@ -242,7 +259,7 @@ public class Player : NetworkBehaviour
             StateMachine.CurrentState.PostTickUpdate();
     }
 
-    [ServerRpc]
+    
     public void StartMatch(MatchManager.StartMatchBroadcast start)
     {
         _startMatch = start.StartMatch;
