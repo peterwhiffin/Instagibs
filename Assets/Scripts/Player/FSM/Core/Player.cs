@@ -29,6 +29,7 @@ public class Player : NetworkBehaviour
         public bool dead;
         public Ray gcRay;
         public float lookSpeed;
+        public bool inAir;
     }
 
     public struct RecData
@@ -99,6 +100,7 @@ public class Player : NetworkBehaviour
     public NetworkAnimator _networkAnim;
     public GameObject _readyUpUI;
     public GameObject _matchTimer;
+    public GameObject _winnerText;
     public LayerMask _groundMask;
     public RepData _repData;
     public Vector3 _cameDefaultPos;
@@ -124,9 +126,6 @@ public class Player : NetworkBehaviour
     
     public bool _startMatch;    
     public bool _matchStarted;
-    
-    [SyncVar]
-    private int _ownerID;
 
     private void Awake()
     {
@@ -155,7 +154,6 @@ public class Player : NetworkBehaviour
         _shootTimer = 2d;
         _startMatch = false;
         _matchStarted = true;
-        _ownerID = Owner.ClientId;
     }
 
     public override void OnStartClient()
@@ -181,14 +179,14 @@ public class Player : NetworkBehaviour
             Cursor.visible = false;
 
             _camObject.SetActive(true);
-            //_readyUpUI.SetActive(true);
+            _readyUpUI.SetActive(true);
             _spawnsParent = GameObject.FindWithTag("Spawns");
             _spawns = _spawnsParent.GetComponentsInChildren<Transform>();
             _mainMenu = Instantiate(_mainMenu, new Vector3(0, -400f, 0), Quaternion.identity);
             _menuManager = _mainMenu.GetComponentInChildren<MainMenuManager>();
             _mainMenu.SetActive(false);
             _matchTimer.SetActive(true);
-            
+            _winnerText.SetActive(true);
             
             PlayerInfo msg = new PlayerInfo()
             {
@@ -207,8 +205,10 @@ public class Player : NetworkBehaviour
         _startMatch = status.StartMatch;
         _matchStarted = status.MatchStarted;
 
-        if (!_matchStarted && !_startMatch)
-            _readyUpUI.SetActive(true);
+        //if (!_matchStarted && !_startMatch)
+        //    _readyUpUI.SetActive(true);
+        //else
+        //    _readyUpUI.SetActive(false);
     }
 
 
@@ -220,9 +220,7 @@ public class Player : NetworkBehaviour
         if (base.IsOwner)
         {
             InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.StartMatchBroadcast>(StartMatch);
-            InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.CheckMatchStatus>(MatchStatus);
-
-            
+            InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.CheckMatchStatus>(MatchStatus); 
         }
     }
 
@@ -308,9 +306,21 @@ public class Player : NetworkBehaviour
 
     public void MovePlayer(RepData _data)
     {
-        float delta = (float)base.TimeManager.TickDelta;       
+        float delta = (float)base.TimeManager.TickDelta;
+
         Vector3 newVel = ((transform.forward * _data.moveDir.y) + (transform.right * _data.moveDir.x)) * delta * _playerData.moveSpeed;
-        _rb.velocity = Vector3.Lerp(_rb.velocity, new Vector3(newVel.x, _rb.velocity.y, newVel.z), .1f);
+
+        if(!_data.inAir)
+            _rb.velocity = Vector3.Lerp(_rb.velocity, new Vector3(newVel.x, _rb.velocity.y, newVel.z), .09f);
+        else
+        {
+            if(_data.moveDir != Vector2.zero)
+                _rb.velocity = Vector3.Lerp(_rb.velocity, new Vector3(newVel.x, _rb.velocity.y, newVel.z), .07f);          
+            else
+                _rb.velocity = Vector3.Lerp(_rb.velocity, new Vector3(newVel.x, _rb.velocity.y, newVel.z), .01f);
+        }
+            
+
         transform.Rotate(transform.up, _data.lookDir.x * delta * _data.lookSpeed);
     }
 

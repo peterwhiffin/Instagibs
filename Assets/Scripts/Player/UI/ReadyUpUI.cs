@@ -25,67 +25,73 @@ public class ReadyUpUI : NetworkBehaviour
 
     public GameObject _readyVisual;
 
-    private void Awake()
-    {
-        InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.PlayersReadyBroadcast>(UpdateReady);
-        InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.StartMatchBroadcast>(MatchStart);
-        InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.EndMatchBroadcast>(MatchEnd);
-    }
-
-    private void OnDestroy()
-    {
-        InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.PlayersReadyBroadcast>(UpdateReady);
-        InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.StartMatchBroadcast>(MatchStart);
-        InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.EndMatchBroadcast>(MatchEnd);
-    }
-
     public override void OnStartClient()
     {
         base.OnStartClient();
-
+              
         if (base.IsOwner)
         {
-            var newPlayer = new ReadyBroadcast()
-            {
-                IsReady = false,
-                IsDisc = false
-            };
+            InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.PlayersReadyBroadcast>(UpdateReady);
+            InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.StartMatchBroadcast>(MatchStart);
+            InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.EndMatchBroadcast>(MatchEnd);
+            InstanceFinder.ClientManager.RegisterBroadcast<MatchManager.CheckMatchStatus>(UpdateMatchStatus);
+            _winnerText.text = "";
+            _isReady = false;
+        }
+    }
 
-            InstanceFinder.ClientManager.Broadcast(newPlayer);
+    public void UpdateMatchStatus(MatchManager.CheckMatchStatus status)
+    {
+        if (status.StartMatch || status.MatchStarted)
+        {
+            _readyVisual.SetActive(false);
+            _winnerText.text = " ";
+        }
+        else if(!status.StartMatch && !status.MatchStarted)
+        {
+            _readyVisual.SetActive(true);
+            _isReady = false;
         }
     }
 
     public override void OnStopClient()
     {
-        base.OnStopClient();      
+        base.OnStopClient();
+
+        if (base.IsOwner)
+        {
+            InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.PlayersReadyBroadcast>(UpdateReady);
+            InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.StartMatchBroadcast>(MatchStart);
+            InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.EndMatchBroadcast>(MatchEnd);
+            InstanceFinder.ClientManager.UnregisterBroadcast<MatchManager.CheckMatchStatus>(UpdateMatchStatus);
+        }
     }
 
     public void MatchStart(MatchManager.StartMatchBroadcast info)
     {
-       _readyVisual.SetActive(false);
+        _winnerText.text = " ";
+        //_readyVisual.SetActive(false);       
     }
 
     public void MatchEnd(MatchManager.EndMatchBroadcast info)
     {
-        if (info.MatchEnded)
+        _readyVisual.SetActive(true);
+        _isReady = false;
+        _selfReadyText.text = "Not Ready";
+        _readyImage.color = Color.red;
+        _winnerText.text = info.Winner + (" wins!");
+        
+        var ready = new ReadyBroadcast()
         {
-            _readyVisual.SetActive(true);
-            _isReady = false;
-            _selfReadyText.text = "Not Ready";
-            _readyImage.color = Color.red;
-            _winnerText.gameObject.SetActive(true);
-            _winnerText.text = info.Winner + (" wins!");
-        }
-        else
-        {
-            _winnerText.text = "";
-        }
+            IsReady = _isReady
+        };
+
+        InstanceFinder.ClientManager.Broadcast(ready);
     }
 
     public void ReadyUp()
     {
-
-        if (_readyVisual.activeInHierarchy)
+        if (_readyVisual.activeInHierarchy && base.IsOwner)
         {
             _isReady = !_isReady;
 
@@ -103,8 +109,7 @@ public class ReadyUpUI : NetworkBehaviour
 
             var ready = new ReadyBroadcast()
             {
-                IsReady = _isReady,
-                IsDisc = false
+                IsReady = _isReady
             };
 
             InstanceFinder.ClientManager.Broadcast(ready);

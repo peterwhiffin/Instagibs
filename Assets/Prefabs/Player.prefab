@@ -350,7 +350,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slot: 3
-  _playerBar: {fileID: 0}
 --- !u!1 &597399066291293243
 GameObject:
   m_ObjectHideFlags: 0
@@ -520,7 +519,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slot: 6
-  _playerBar: {fileID: 0}
 --- !u!1 &1404301222691608105
 GameObject:
   m_ObjectHideFlags: 0
@@ -748,7 +746,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slot: 5
-  _playerBar: {fileID: 0}
 --- !u!1 &2136327184994149948
 GameObject:
   m_ObjectHideFlags: 0
@@ -1459,7 +1456,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2156096070610403392}
-  m_LocalRotation: {x: -7.1054274e-15, y: -1.3271574e-14, z: -7.1054274e-15, w: 1}
+  m_LocalRotation: {x: -7.226203e-15, y: -1.349716e-14, z: -7.226203e-15, w: 1}
   m_LocalPosition: {x: -0.061144635, y: 0, z: 1.5041809e-15}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -2630,7 +2627,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slot: 7
-  _playerBar: {fileID: 0}
 --- !u!1 &3915006837847503222
 GameObject:
   m_ObjectHideFlags: 0
@@ -2856,7 +2852,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slot: 2
-  _playerBar: {fileID: 0}
 --- !u!1 &4343747239865991362
 GameObject:
   m_ObjectHideFlags: 0
@@ -2874,7 +2869,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &5267829124149676744
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3068,17 +3063,6 @@ MonoBehaviour:
   _networkObjectCache: {fileID: 8424178963470045762}
   _playerBar: {fileID: 2359288587143944655, guid: 17d7850aa830c804d837e76d73e99b55,
     type: 3}
-  _playerBars:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   _playerSlots:
   - {fileID: 9145664791143406885}
   - {fileID: 4634333508697175960}
@@ -3184,7 +3168,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slot: 1
-  _playerBar: {fileID: 0}
 --- !u!1 &4771381344646813610
 GameObject:
   m_ObjectHideFlags: 0
@@ -3577,7 +3560,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slot: 8
-  _playerBar: {fileID: 0}
 --- !u!1 &7399950583051615527
 GameObject:
   m_ObjectHideFlags: 0
@@ -3958,7 +3940,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slot: 4
-  _playerBar: {fileID: 0}
 --- !u!1 &8410251949829617894
 GameObject:
   m_ObjectHideFlags: 0
@@ -4437,6 +4418,7 @@ MonoBehaviour:
   _networkAnim: {fileID: 1407307874}
   _readyUpUI: {fileID: 7761521815068753935}
   _matchTimer: {fileID: 2440455971373374284}
+  _winnerText: {fileID: 3193183148655020370}
   _groundMask:
     serializedVersion: 2
     m_Bits: 128
@@ -4642,7 +4624,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8424178963470045764}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bb4bb24f67adcb049a601dd7a9be9ffb, type: 3}
   m_Name: 
@@ -4855,7 +4837,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slot: 9
-  _playerBar: {fileID: 0}
 --- !u!1 &9145664791143406885
 GameObject:
   m_ObjectHideFlags: 0
@@ -4946,4 +4927,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slot: 0
-  _playerBar: {fileID: 0}

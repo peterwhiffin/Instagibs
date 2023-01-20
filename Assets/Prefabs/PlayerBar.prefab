@@ -92,12 +92,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3284dd4d36a703142b1a8e3a9727282e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: 0}
+  _networkObjectCache: {fileID: 0}
   _nameText: {fileID: 2490023193899313809}
   _scoreText: {fileID: 6890947133599654608}
   _pingText: {fileID: 6337388390201635738}
   _barImage: {fileID: 2202303107216954398}
   _currentSlot: 0
   _score: 0
+  _isActive: 0
+  _ID: 0
   slotObject: {fileID: 0}
   scoreboard: {fileID: 0}
 --- !u!1 &2870241567875809407

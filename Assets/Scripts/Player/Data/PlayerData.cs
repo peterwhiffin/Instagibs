@@ -10,6 +10,7 @@ public class PlayerData : ScriptableObject
     public float jumpHeight;
     public float maxHealth;
     public float lookSpeed;
+    public float inAirSpeed;
 
     public float respawnTime;
     public string Username;

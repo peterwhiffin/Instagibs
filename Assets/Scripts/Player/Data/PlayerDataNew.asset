@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db8cab4e833aba64182c1bcbf90dadaf, type: 3}
   m_Name: PlayerDataNew
   m_EditorClassIdentifier: 
-  moveSpeed: 1000
+  moveSpeed: 2000
   jumpHeight: 600
   maxHealth: 100
   lookSpeed: 13.71
+  inAirSpeed: 600
   respawnTime: 5
   Username: NotPeterWhiffin

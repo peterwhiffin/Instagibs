@@ -1803,7 +1803,9 @@ MonoBehaviour:
   _playersReady: 0
   _seconds: 0
   _minutes: 0
+  _matchLeader: 0
   _matchTime: 0
+  _startTime: 0
   _startMatch: 0
   _matchStarted: 0
   _matchFinished: 0
@@ -8650,11 +8652,31 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 309198663751591319, guid: 5b9715a3662b2f94cafa2c212e949b75,
+        type: 3}
+      propertyPath: Loop
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 309198663751591319, guid: 5b9715a3662b2f94cafa2c212e949b75,
+        type: 3}
+      propertyPath: m_PlayOnAwake
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2511970837412586893, guid: 5b9715a3662b2f94cafa2c212e949b75,
         type: 3}
       propertyPath: _networkManager
       value: 
       objectReference: {fileID: 7443408887748215402}
+    - target: {fileID: 7179489243402868537, guid: 5b9715a3662b2f94cafa2c212e949b75,
+        type: 3}
+      propertyPath: Loop
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7179489243402868537, guid: 5b9715a3662b2f94cafa2c212e949b75,
+        type: 3}
+      propertyPath: m_PlayOnAwake
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7179489243432024374, guid: 5b9715a3662b2f94cafa2c212e949b75,
         type: 3}
       propertyPath: m_Name
@@ -8723,6 +8745,11 @@ PrefabInstance:
     - target: {fileID: 8049853780416590837, guid: 5b9715a3662b2f94cafa2c212e949b75,
         type: 3}
       propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8049853780646549480, guid: 5b9715a3662b2f94cafa2c212e949b75,
+        type: 3}
+      propertyPath: defaultVolume
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8049853781210878389, guid: 5b9715a3662b2f94cafa2c212e949b75,

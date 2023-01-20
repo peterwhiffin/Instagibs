@@ -40,6 +40,7 @@ public class PlayerInAirState : PlayerState
         {            
             _repData.moveDir = _moveInput;
             _repData.jump = _player.InputHandler.JumpQueued;
+            _repData.inAir = true;
             _player.Replicate(_repData, false);          
             _player.InputHandler.JumpQueued = false;
         }
